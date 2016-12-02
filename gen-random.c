@@ -17,8 +17,6 @@ int main(int argc, char *argv[]) {
   int N = atoi(argv[1]);
   assert(N <= MAXN);
 
-  for (int i = 0; i < N; ++i) p[i] = i;
-
   for (int k = 0; k < 2; ++k) {
     printf("%d\n", N);
     for (int i = 0; i < N; ++i)
