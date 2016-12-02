@@ -7,7 +7,7 @@ struct graph {
   int nb_nodes;
 };
 
-/* Returns 1 if a is a g1-to-g2-isomorphism, 0 otherwise */
+/* Return 1 if a is a g1-to-g2-isomorphism, 0 otherwise */
 /* a must be a bijection of [1, n] with n = g1->nb_nodes = g2->nb_nodes */ 
 int is_isomorphism(const struct graph *g1, const struct graph *g2, const int *a) {
   int n = g1->nb_nodes;
@@ -18,13 +18,17 @@ int is_isomorphism(const struct graph *g1, const struct graph *g2, const int *a)
   return 1;
 }
 
+/* Return 1 if g1 and g2 are isomorphic, 0 otherwise */
+/* In the first case, a will contain the isomorphism at the end of simple_backtrack(g1, g2, a, 0) */
+/* Algorithm: simple backtrack */
 int simple_backtrack(const struct graph *g1, const struct graph *g2, int *a, int u) {
+  if (g1->nb_nodes != g2->nb_nodes) return 0;
   int n = g1->nb_nodes;
   if (u == n) return 1;
   for (int v = 0; v < n; ++v) {
     int possible = 1;
     for (int i = 0; i < u; ++i) {
-      if (a[i] == v || g1->adj[u][i] != g2->adj[a[u]][a[i]]) {
+      if (a[i] == v || g1->adj[u][i] != g2->adj[v][a[i]] || g1->adj[i][u] != g2->adj[a[i]][v]) {
         possible = 0;
         break;
       }
@@ -85,7 +89,10 @@ int main(void) {
   struct graph *g1 = read_graph(); 
   struct graph *g2 = read_graph();
   int *a = calloc_wrapper(g1->nb_nodes, sizeof *a);
-  if (simple_backtrack(g1, g2, a, 0)) {
+  if (!simple_backtrack(g1, g2, a, 0)) {
+    puts("non");
+  } else {
+    puts("oui");
     assert(is_isomorphism(g1, g2, a));
     for (int i = 0; i < g1->nb_nodes; ++i)
       printf("%d ", a[i]);
