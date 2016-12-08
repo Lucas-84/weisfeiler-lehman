@@ -91,12 +91,12 @@ void stable_partition(const struct graph *g, struct partition *p) {
   int n = g->nb_nodes;
   int *succ_node_part = malloc_wrapper(n * sizeof *succ_node_part);
   int has_changed = 0;
-  int prev_nb_parts = p->nb_parts;
 
   for (int i = 0; i < n; ++i)
     succ_node_part[i] = p->node_part[i];
  
   do {
+    int prev_nb_parts = p->nb_parts;
     has_changed = 0;
     pcmp = p;
 
@@ -110,6 +110,7 @@ void stable_partition(const struct graph *g, struct partition *p) {
 
       for (int j = p->part_size[i] - 2; j >= 0; --j) {
         int u = p->parts[i][j], v = p->parts[i][j + 1];
+
         if (compare_lists(p->adjl[u], p->degree[u], p->adjl[v], p->degree[v]) != 0) {
           for (int k = j + 1; k <= last; ++k) {
             p->parts[p->nb_parts][k - (j + 1)] = p->parts[i][k];
@@ -159,7 +160,7 @@ int weisfeiler_lehman(const struct graph *g1, const struct graph *g2, int *a) {
   stable_partition(g1, &p);
   
   for (int i = 0; i < p.nb_parts; ++i) {
-    printf("Part %d: ", i);
+    printf("Part %d %d ", i, p.part_size[i]);
     for (int j = 0; j < p.part_size[i]; ++j) printf("%d ", p.parts[i][j]);
     puts("");
   }

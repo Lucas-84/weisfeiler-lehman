@@ -1,0 +1,7 @@
+- Generer des tests varies
+$ for i in `seq 5 5 100`; do ./gen-random $i > tests/$i-random.in; done
+$ for i in `seq 100 50 1000`; do ./gen-random $i > tests/$i-random.in; done
+$ for i in `seq 5 5 100`; do ./gen-random-perm $i > tests/$i-random-perm.in; done
+$ for i in `seq 100 50 1000`; do ./gen-random-perm $i > tests/$i-random-perm.in; done
+- Tester avec le checker du stable partitioning
+$ for f in tests/*; do echo $f; ./a < $f | ./checker $f; done
