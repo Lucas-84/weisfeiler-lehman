@@ -19,15 +19,18 @@ int main(int argc, char *argv[]) {
   srand(time(NULL));
   int N = atoi(argv[1]);
   assert(N <= MAXN);
+  int M = 0;
 
   for (int i = 0; i < N; ++i)
-    for (int j = i + 1; j < N; ++j)
+    for (int j = i + 1; j < N; ++j) {
       adj[i][j] = adj[j][i] = rand() % 2;
-  
+      M += adj[i][j];
+    }
+
   for (int i = 0; i < N; ++i) p[i] = i;
 
   for (int k = 0; k < 2; ++k) {
-    printf("%d\n", N);
+    printf("%d %d\n", N, M);
     for (int i = 0; i < N; ++i) {
       int d = 0;
       for (int j = 0; j < N; ++j) d += adj[p[i]][p[j]];

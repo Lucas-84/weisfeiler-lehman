@@ -18,10 +18,15 @@ int main(int argc, char *argv[]) {
   assert(N <= MAXN);
 
   for (int k = 0; k < 2; ++k) {
-    printf("%d\n", N);
+    int M = 0;
+
     for (int i = 0; i < N; ++i)
-      for (int j = i + 1; j < N; ++j)
+      for (int j = i + 1; j < N; ++j) {
         adj[i][j] = adj[j][i] = rand() % 2;
+        M += adj[i][j];
+      }
+    
+    printf("%d %d\n", N, M);
 
     for (int i = 0; i < N; ++i) {
       int d = 0;

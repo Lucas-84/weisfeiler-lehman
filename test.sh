@@ -10,7 +10,7 @@ for f in tests/*.in; do
   res=$(./$WEIS < $f | head -c 3)
 
   # Résultat attendu
-  if [ $(echo $f | grep '-perm.in') ]; then
+  if [ $(echo $f | grep "\-perm.in") ]; then
     expected=oui
   else
     expected=non
