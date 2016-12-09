@@ -1,4 +1,4 @@
-// Generate two random isomorphic graphs
+// Generate two random isomorphic graphs (Erdos-Renyi)
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,8 +11,8 @@ int p[MAXN];
 void swap(int *p, int *q) { int t = *p; *p = *q; *q = t; }
 
 int main(int argc, char *argv[]) {
-	if (argc < 2) {
-		fprintf(stderr, "Usage: ./gen-random [nb_noeuds]\n");
+	if (argc < 3) {
+		fprintf(stderr, "Usage: ./gen-random [nb_noeuds] [P(arete entre u et v)]\n");
 		return 0;
 	}
 
@@ -20,10 +20,13 @@ int main(int argc, char *argv[]) {
 	int N = atoi(argv[1]);
 	assert(N <= MAXN);
 	int M = 0;
+	double pr = strtod(argv[2], NULL);
 
 	for (int i = 0; i < N; ++i)
 		for (int j = i + 1; j < N; ++j) {
-			adj[i][j] = adj[j][i] = rand() % 2;
+			int x = rand();
+			if (x <= pr * RAND_MAX)
+				adj[i][j] = adj[j][i] = 1;
 			M += adj[i][j];
 		}
 

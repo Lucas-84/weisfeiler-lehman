@@ -1,4 +1,4 @@
-// Generate two random graphs
+// Generate two random graphs (Erdos-Renyi)
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,21 +8,24 @@ enum { MAXN = 10000 };
 int adj[MAXN][MAXN];
 
 int main(int argc, char *argv[]) {
-	if (argc < 2) {
-		fprintf(stderr, "Usage: ./gen-random [nb_noeuds]\n");
+	if (argc < 3) {
+		fprintf(stderr, "Usage: ./gen-random [nb_noeuds] [P(arete entre u et v)]\n");
 		return 0;
 	}
 
 	srand(time(NULL));
 	int N = atoi(argv[1]);
 	assert(N <= MAXN);
+	double p = strtod(argv[2], NULL);
 
 	for (int k = 0; k < 2; ++k) {
 		int M = 0;
 
 		for (int i = 0; i < N; ++i)
 			for (int j = i + 1; j < N; ++j) {
-				adj[i][j] = adj[j][i] = rand() % 2;
+				int x = rand();
+				if (x <= RAND_MAX * p)
+					adj[i][j] = adj[j][i] = 1;
 				M += adj[i][j];
 			}
 		

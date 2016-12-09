@@ -1,23 +1,39 @@
+// Optimisations possibles :
+// - Traiter a part le cas (initial) du tri par degre
+// - Ne pas stabiliser quand on n'a pas modifie les partitions (premier cas de WL)
+// - Hasher au lieu de trier
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
+/* Graph data structure */
+/* Representation with an adjacency matrix */
 struct graph {
+	/* adj[u][v] = 1 iff. (u, v) in E */
 	int **adj;
+	/* deg[u] := |{(u, v) in E, v in V}| */
 	int *deg;
-	int nb_nodes;
-	int nb_edges;
+	int nb_nodes, nb_edges;
 };
 
+/* Representation of a partition */
 struct partition {
+	/* parts[i] := list of the nodes in the i-th part */
 	int **parts;
+	/* Adjacency list */
 	int **adjl;
+	/* degree[u] is the degree of u in G */
 	int *degree;
+	/* node_part[u] = i iff. u is in the i-th part */
 	int *node_part;
+	/* part_size[i] := size of the ith part */
 	int *part_size; 
+	/* Number of parts */
 	int nb_parts;
 };
 
+/* Some wrappers for handling errors in dynamic memory management */
 void *malloc_wrapper(size_t sz) {
 	void *p = malloc(sz);
 	if (p == NULL) {
@@ -36,6 +52,8 @@ void *calloc_wrapper(size_t nmemb, size_t sz) {
 	return p;
 }
 
+/* assert(g1->nb_nodes == g2->nb_nodes) */
+/* Returns 1 if a : [1, n] -> [1, n] is a bijection from the set represented by e to its image */
 int is_isomorphism_partial(const struct graph *g1, const struct graph *g2, const int *a, const int *e) {
 	int n = g1->nb_nodes;
 	for (int u = 0; u < n; ++u)
@@ -58,7 +76,9 @@ int is_isomorphism(const struct graph *g1, const struct graph *g2, const int *a)
 	return ret;
 }
 
-
+/* Return -1, 0 or +1 according to the relative order of p and q */
+/* p and q are supposed to be adjacency list of two nodes in (g1, p1) and (g2, p2) respectively */
+/* Lists are classified lexicographically by the index of the parts of the list elements */
 int compare_lists(const struct partition *p1, const int *p, int n, const struct partition *p2, const int *q, int m) {
 	int i = 0, j = 0;
 	while (i < n && j < m) {
@@ -72,13 +92,17 @@ int compare_lists(const struct partition *p1, const int *p, int n, const struct 
 	return i < n ? -1 : +1;
 }
 
+/* Global variable used in compared_nodes */
+/* It is the partition refered by the sorting algorithm */
 static struct partition *pcmp;
 
+/* Return -1, 0 or +1 if u should go before v in the "natural order" described above, induced by lexicographic order on the adjacency list */
 int compare_nodes(const void *p, const void *q) {
 	int u = *(const int *)p, v = *(const int *)q;
 	return compare_lists(pcmp, pcmp->adjl[u], pcmp->degree[u], pcmp, pcmp->adjl[v], pcmp->degree[v]);
 }
 
+/* Return -1, 0 or +1 if u should go before v in the "natural order" described above */
 int compare_node_parts(const void *p, const void *q) {
 	int u = *(const int *)p, v = *(const int *)q;
 	int pu = pcmp->node_part[u], pv = pcmp->node_part[v];
@@ -86,6 +110,24 @@ int compare_node_parts(const void *p, const void *q) {
 	return pu < pv ? -1 : +1;
 }
 
+/*
+void insertion_sort(void *vp, int nmemb, int size, int (*compare)(const void *, const void *)) {
+	char *buf = malloc_wrapper(size);
+	char *p = vp;
+	for (int i = 0; i < nmemb; ++i) {
+		char *q = p + i * size;
+		while (q > p && compare(q - size, q) > 0) {
+			memcpy(buf, q - size, size);
+			memcpy(q - size, q, size);
+			memcpy(q, buf, size);
+			q -= size;
+		}
+	}
+	free(buf);
+}
+*/
+
+/* Update p until reaching a stable partition of g */
 void stable_partition(const struct graph *g, struct partition *p) {
 	int n = g->nb_nodes;
 	int *succ_node_part = malloc_wrapper(n * sizeof *succ_node_part);
@@ -94,14 +136,16 @@ void stable_partition(const struct graph *g, struct partition *p) {
 	for (int i = 0; i < n; ++i)
 		succ_node_part[i] = p->node_part[i];
  
+ 	int it = 0;
 	do {
+		printf("%d\n", it++);
 		int prev_nb_parts = p->nb_parts;
 		has_changed = 0;
 		pcmp = p;
 
 		for (int u = 0; u < n; ++u)
 			qsort(p->adjl[u], p->degree[u], sizeof(int), compare_node_parts);
-
+		
 		for (int i = 0; i < prev_nb_parts; ++i) {
 			qsort(p->parts[i], p->part_size[i], sizeof(int), compare_nodes);
 			
@@ -133,6 +177,7 @@ void stable_partition(const struct graph *g, struct partition *p) {
 	free(succ_node_part);
 } 
 
+/* Return 1 if p1 and p2 are incompatible partitions, 0 otherwise */
 int are_incompatible(const struct partition *p1, const struct partition *p2) {
 	if (p1->nb_parts != p2->nb_parts)
 		return 1;
@@ -144,18 +189,23 @@ int are_incompatible(const struct partition *p1, const struct partition *p2) {
 	return 0;
 }
 
+/* Create a new part with the only element found at the i-th position in the ipart-th part */
 void isolate(struct partition *p, int ipart, int i) {
 	if (p->part_size[ipart] == 1)
 		return;
+
 	p->parts[p->nb_parts][0] = p->parts[ipart][i];
 	p->node_part[p->parts[ipart][i]] = p->nb_parts;
 	p->part_size[p->nb_parts] = 1;
+
 	for (int j = i; j < p->part_size[ipart] - 1; ++j)
 		p->parts[ipart][j] = p->parts[ipart][j + 1];
+
 	p->part_size[ipart]--;
 	p->nb_parts++;
 }
 
+/* Find the part with the smallest cardinal in p, which doesn't contain an already matched node */
 int smallest_part(const struct partition *p, const int *e) {
 	int imin = -1;
 	for (int i = 0; i < p->nb_parts; ++i) {
@@ -169,6 +219,7 @@ int smallest_part(const struct partition *p, const int *e) {
 	return imin;
 }
 
+/* Debug function: print a partition */
 void print_partition(struct partition p) {
 	puts("--------------------------------------------------------------------------------");
 	for (int i = 0; i < p.nb_parts; ++i) {
@@ -179,6 +230,11 @@ void print_partition(struct partition p) {
 	puts("--------------------------------------------------------------------------------");
 }
 
+/* Recursive Weisfeiler-Lehman algorithm */
+/* p1 (resp. p2) is the partition constructed so far in g1 (resp. g2) */
+/* a is the current (partial) isomorphism */
+/* e is the set of all elements who have already been set in a */
+/* k is the total number of set elements */
 int weisfeiler_lehman_from(struct partition *p1, struct partition *p2, const struct graph *g1, const struct graph *g2, int *a, int *e, int k) {
 	if (k == g1->nb_nodes)
 		return 1;
@@ -200,7 +256,8 @@ int weisfeiler_lehman_from(struct partition *p1, struct partition *p2, const str
 		for (int i = 0; i < p1->nb_parts; ++i) {
 			if (p1->part_size[i] == 1) {
 				int u = p1->parts[i][0];
-				if (e[u]) continue;
+				if (e[u])
+					continue;
 				a[u] = p2->parts[i][0];
 				e[u] = 1;
 				isolate(&n1, i, 0);
@@ -232,6 +289,7 @@ int weisfeiler_lehman_from(struct partition *p1, struct partition *p2, const str
 	return 0;
 }
 
+/* Create a new partition associated with g */
 struct partition create_partition(const struct graph *g) {
 	int n = g->nb_nodes;
 	struct partition p;
@@ -239,14 +297,18 @@ struct partition create_partition(const struct graph *g) {
 	p.degree = malloc_wrapper(n * sizeof *p.degree);
 	p.node_part = calloc_wrapper(n, sizeof *p.node_part);
 	p.parts = malloc_wrapper(n * sizeof *p.parts);
+	
 	for (int u = 0; u < n; ++u)
 		p.parts[u] = malloc_wrapper(n * sizeof *p.parts[u]);
+
 	p.adjl = malloc_wrapper(n * sizeof *p.adjl);
+
 	for (int u = 0; u < n; ++u)
 		p.adjl[u] = malloc_wrapper(n * sizeof *p.adjl[u]);
 
 	p.nb_parts = 1;
 	p.part_size[0] = n;
+
 	for (int u = 0; u < n; ++u)
 		p.parts[0][u] = u;
 
@@ -261,6 +323,7 @@ struct partition create_partition(const struct graph *g) {
 	return p;
 }
 
+/* Release a partition associated with g */
 void free_partition(const struct graph *g, struct partition *p) {
 	int n = g->nb_nodes;
 	for (int u = 0; u < n; ++u)
@@ -274,10 +337,13 @@ void free_partition(const struct graph *g, struct partition *p) {
 	free(p->degree);
 }
 
+/* General Weisfeiler-Lehman algorithm */
 int weisfeiler_lehman(const struct graph *g1, const struct graph *g2, int *a) {
 	int n = g1->nb_nodes;
 	struct partition p1 = create_partition(g1), p2 = create_partition(g2);
 	int *e = calloc_wrapper(n, sizeof *e);
+	//print_partition(p1);
+	//print_partition(p2);
 	int ans = weisfeiler_lehman_from(&p1, &p2, g1, g2, a, e, 0);
 	free(e);
 	free_partition(g1, &p1);
@@ -331,14 +397,16 @@ int backtrack_degree(const struct graph *g1, const struct graph *g2, int *a, int
 	return 0;
 }
 
-
+/* Read a graph in the specified input format */
 struct graph *read_graph(void) {
 	struct graph *g = malloc_wrapper(sizeof *g);
 	scanf("%d%d", &g->nb_nodes, &g->nb_edges);
 	g->adj = malloc_wrapper(g->nb_nodes * sizeof *g->adj);
 	g->deg = malloc_wrapper(g->nb_nodes * sizeof *g->deg);
+
 	for (int u = 0; u < g->nb_nodes; ++u)
 		g->adj[u] = calloc_wrapper(g->nb_nodes, sizeof *g->adj[u]);
+
 	for (int u = 0; u < g->nb_nodes; ++u) {
 		scanf("%d", &g->deg[u]);
 		for (int i = 0; i < g->deg[u]; ++i) {
@@ -350,9 +418,11 @@ struct graph *read_graph(void) {
 	return g;
 }
 	
+/* Release the memory dynamically allocated for the storage of the graph */
 void free_graph(struct graph *g) {
 	for (int i = 0; i < g->nb_nodes; ++i)
 		free(g->adj[i]);
+
 	free(g->adj);
 	free(g);
 }
@@ -362,6 +432,7 @@ int main(void) {
 	struct graph *g2 = read_graph();
 	int *a = calloc_wrapper(g1->nb_nodes, sizeof *a);
 
+	/* Comment out these lines to choose the appropriate algorithm */
 	//if (!backtrack_simple(g1, g2, a, 0)) {
 	//if (!backtrack_degree(g1, g2, a, 0)) {
 	if (!weisfeiler_lehman(g1, g2, a)) {
@@ -373,6 +444,7 @@ int main(void) {
 			printf("%d ", a[i]);
 		puts("");
 	}
+
 	free(a);
 	free_graph(g1);
 	free_graph(g2);
