@@ -200,7 +200,7 @@ int weisfeiler_lehman_from(struct partition *p1, struct partition *p2, const str
 		for (int i = 0; i < p1->nb_parts; ++i) {
 			if (p1->part_size[i] == 1) {
 				int u = p1->parts[i][0];
-				if (a[u]) continue;
+				if (e[u]) continue;
 				a[u] = p2->parts[i][0];
 				e[u] = 1;
 				isolate(&n1, i, 0);
