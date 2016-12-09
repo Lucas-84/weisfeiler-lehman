@@ -14,7 +14,7 @@ using namespace std;
 #define snd second
 #define sz(a) int((a).size())
 #ifndef M_PI
-#   define M_PI 3.14159265358979323846
+#	 define M_PI 3.14159265358979323846
 #endif
 typedef long long ll;
 typedef pair<int, int> pii;
