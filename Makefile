@@ -1,7 +1,7 @@
 BIN=a
 
 compile:
-	gcc -Wall -Wextra -std=c99 a.c -o $(BIN)
+	gcc -O2 -Wall -Wextra -std=c99 a.c -o $(BIN)
 
 test: compile
 	time ./test.sh

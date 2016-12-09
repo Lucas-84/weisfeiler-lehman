@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-enum { MAXN = 1000 };
+enum { MAXN = 10000 };
 int adj[MAXN][MAXN];
 
 int main(int argc, char *argv[]) {
