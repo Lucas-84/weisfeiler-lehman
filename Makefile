@@ -1,7 +1,8 @@
-BIN=a
+BIN=weisfeiler-lehman
+SOURCES=weisfeiler-lehman.c
 
 compile:
-	gcc -O2 -Wall -Wextra -std=c99 a.c -o $(BIN)
+	gcc -O2 -Wall -Wextra -std=c99 $(SOURCES) -o $(BIN)
 
 test: compile
 	time ./test.sh
