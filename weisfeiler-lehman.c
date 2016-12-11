@@ -7,10 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-/*
 int max(int a, int b) { return a > b ? a : b; }
 int min(int a, int b) { return a < b ? a : b; }
-*/
 
 /* Graph data structure */
 /* Representation with an adjacency matrix */
@@ -41,20 +39,32 @@ struct partition {
 /* Some wrappers for handling errors in dynamic memory management */
 void *malloc_wrapper(size_t sz) {
 	void *p = malloc(sz);
+
 	if (p == NULL) {
 		perror("malloc");
 		exit(EXIT_FAILURE);
 	}
+
 	return p;
+}
+
+int malloc_wrapper_bound(void) {
+	return 4;
 }
 
 void *calloc_wrapper(size_t nmemb, size_t sz) {
 	void *p = calloc(nmemb, sz);
+
 	if (p == NULL) {
 		perror("calloc");
 		exit(EXIT_FAILURE);
 	}
+
 	return p;
+}
+
+int calloc_wrapper_bound(void) {
+	return 4;
 }
 
 /* assert(g1->nb_nodes == g2->nb_nodes) */
@@ -70,7 +80,7 @@ int is_isomorphism_partial(const struct graph *g1, const struct graph *g2, const
 }
 
 int is_isomorphism_partial_bound(int n) {
-	return 2 * n * n;
+	return 1 + n * (1 + n * 2) + 1;
 }
 
 /* Return 1 if a is a g1-to-g2-isomorphism, 0 otherwise */
@@ -86,7 +96,7 @@ int is_isomorphism(const struct graph *g1, const struct graph *g2, const int *a)
 }
 
 int is_isomorphism_bound(int n) {
-	return n + is_isomorphism_partial_bound(n);	
+	return 1 + malloc_wrapper_bound() + n + is_isomorphism_partial_bound(n) + 2;	
 }
 
 /* Return -1, 0 or +1 according to the relative order of p and q */
@@ -105,8 +115,8 @@ int compare_lists(const struct partition *p1, const int *p, int n, const struct 
 	return i < n ? -1 : +1;
 }
 
-int compare_lists_bound(int degmax) {
-	return 3 * degmax;
+int compare_lists_bound(int deg1, int deg2) {
+	return 2 + max(deg1, deg2) * 5 + 3;
 }
 
 /* Global variable used in compared_nodes */
@@ -120,19 +130,22 @@ int compare_nodes(const void *p, const void *q) {
 }
 
 int compare_nodes_bound(int degmax) {
-	return compare_lists_bound(degmax);
+	return 2 + compare_lists_bound(degmax, degmax);
 }
 
 /* Return -1, 0 or +1 if u should go before v in the "natural order" described above */
 int compare_node_parts(const void *p, const void *q) {
 	int u = *(const int *)p, v = *(const int *)q;
 	int pu = pcmp->node_part[u], pv = pcmp->node_part[v];
-	if (pu == pv) return 0;
+
+	if (pu == pv)
+		return 0;
+
 	return pu < pv ? -1 : +1;
 }
 
 int compare_node_parts_bound(void) {
-	return 2;
+	return 5;
 }
 
 /*
@@ -159,6 +172,10 @@ void sort_adjacency_lists(int n, struct partition *p) {
 		qsort(p->adjl[u], p->degree[u], sizeof(int), compare_node_parts);
 }
 
+int sort_adjacency_lists_bound(int n, int degmax) {
+	return n * degmax * degmax * compare_node_parts_bound(); 
+}
+
 void add_new_part(struct partition *p, int i, int start, int end, int *succ_node_part) {
 	for (int k = start; k <= end; ++k) {
 		p->parts[p->nb_parts][k - start] = p->parts[i][k];
@@ -167,6 +184,10 @@ void add_new_part(struct partition *p, int i, int start, int end, int *succ_node
 
 	p->part_size[p->nb_parts] += end - start + 1;
 	p->nb_parts++;
+}
+
+int add_new_part_bound(int start, int end) {
+	return 2 * (end - start + 1) + 2;	
 }
 
 int stabilize_part(struct partition *p, int *succ_node_part, int i) {
@@ -187,6 +208,10 @@ int stabilize_part(struct partition *p, int *succ_node_part, int i) {
 
 	p->part_size[i] = last + 1;
 	return has_changed;
+}
+
+int stabilize_part_bound() {
+	return 0; // TODO;
 }
 
 /* Update p until reaching a stable partition of g */
@@ -210,16 +235,27 @@ void find_stable_partition(const struct graph *g, struct partition *p) {
 	free(succ_node_part);
 } 
 
+int find_stable_partition_bound() {
+	return 0; // TODO
+}
+
 /* Return 1 if p1 and p2 are incompatible partitions, 0 otherwise */
 int are_incompatible(const struct partition *p1, const struct partition *p2) {
 	if (p1->nb_parts != p2->nb_parts)
 		return 1;
+
 	for (int i = 0; i < p1->nb_parts; ++i) {
 		int u = p1->parts[i][0], v = p2->parts[i][0];
+
 		if (compare_lists(p1, p1->adjl[u], p1->degree[u], p2, p2->adjl[v], p2->degree[v]) != 0)
 			return 1;
 	}
+
 	return 0;
+}
+
+int add_incompatible_bound() {
+	return 0; // TODO
 }
 
 /* Create a new part with the only element found at the i-th position in the ipart-th part */
@@ -238,9 +274,14 @@ void isolate(struct partition *p, int ipart, int i) {
 	p->nb_parts++;
 }
 
+int isolate_bound() {
+	return 0; // TODO
+}
+
 /* Find the part with the smallest cardinal in p, which doesn't contain an already matched node */
 int smallest_part(const struct partition *p, const int *e) {
 	int imin = -1;
+
 	for (int i = 0; i < p->nb_parts; ++i) {
 		if (p->part_size[i] == 1) {
 			if (!e[p->parts[i][0]])
@@ -249,7 +290,12 @@ int smallest_part(const struct partition *p, const int *e) {
 			imin = i;
 		}
 	}
+
 	return imin;
+}
+
+int smallest_part_bound() {
+	return 0; // TODO
 }
 
 /* Debug function: print a partition */
@@ -284,6 +330,10 @@ int test_all_alone(struct partition *p1, struct partition *p2, const struct grap
 	return is_isomorphism_partial(g1, g2, a, e) && weisfeiler_lehman_from(&n1, &n2, g1, g2, a, e, k);
 }
 
+int test_all_alone_bound() {
+	return 0; // TODO
+}
+
 int test_one(int imin, struct partition *p1, struct partition *p2, const struct graph *g1, const struct graph *g2, int *a, int *e, int k) {
 	int u = p1->parts[imin][0];
 
@@ -300,6 +350,10 @@ int test_one(int imin, struct partition *p1, struct partition *p2, const struct 
 		}
 	}
 	return 0;
+}
+
+int test_one_bound() {
+	return 0; // TODO
 }
 
 /* Recursive Weisfeiler-Lehman algorithm */
@@ -331,6 +385,10 @@ int weisfeiler_lehman_from(struct partition *p1, struct partition *p2, const str
 
 	e[u] = 0;
 	return 0;
+}
+
+int weisfeiler_lehman_from_bound() {
+	return 0; // TODO
 }
 
 /* Create a new partition associated with g */
@@ -367,6 +425,10 @@ struct partition create_partition(const struct graph *g) {
 	return p;
 }
 
+int create_partition_bound() {
+	return 0; // TODO
+}
+
 /* Release a partition associated with g */
 void free_partition(const struct graph *g, struct partition *p) {
 	int n = g->nb_nodes;
@@ -381,6 +443,10 @@ void free_partition(const struct graph *g, struct partition *p) {
 	free(p->degree);
 }
 
+int free_partition_bound() {
+	return 0; // TODO
+}
+
 /* General Weisfeiler-Lehman algorithm */
 int weisfeiler_lehman(const struct graph *g1, const struct graph *g2, int *a) {
 	int n = g1->nb_nodes;
@@ -393,6 +459,10 @@ int weisfeiler_lehman(const struct graph *g1, const struct graph *g2, int *a) {
 	free_partition(g1, &p1);
 	free_partition(g2, &p2);
  	return ans;
+}
+
+int weisfeiler_lehman_bound() {
+	return 0; // TODO
 }
 
 /* Return 1 if g1 and g2 are isomorphic, 0 otherwise */
@@ -426,6 +496,10 @@ int backtrack_simple(const struct graph *g1, const struct graph *g2, int *a, int
 	return 0;
 }
 
+int backtrack_simple_bound() {
+	return 0; // TODO
+}
+
 /* Same as above */
 /* Algorithm: backtrack with degree partition */
 int backtrack_degree(const struct graph *g1, const struct graph *g2, int *a, int u) {
@@ -457,6 +531,10 @@ int backtrack_degree(const struct graph *g1, const struct graph *g2, int *a, int
 	}
 
 	return 0;
+}
+
+int backtrack_degree_bound() {
+	return 0; // TODO
 }
 
 /* Read a graph in the specified input format */
@@ -493,6 +571,10 @@ struct graph *read_graph(void) {
 
 	return g;
 }
+
+int read_graph_bound() {
+	return 0; // TODO
+}
 	
 /* Release the memory dynamically allocated for the storage of the graph */
 void free_graph(struct graph *g) {
@@ -501,6 +583,10 @@ void free_graph(struct graph *g) {
 
 	free(g->adj);
 	free(g);
+}
+
+int free_graph_bound() {
+	return 0; // TODO
 }
 
 int main(void) {
