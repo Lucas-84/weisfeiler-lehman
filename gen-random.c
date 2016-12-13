@@ -26,6 +26,8 @@ int main(int argc, char *argv[]) {
 				int x = rand();
 				if (x <= RAND_MAX * p)
 					adj[i][j] = adj[j][i] = 1;
+				else
+					adj[i][j] = adj[j][i] = 0;
 				M += adj[i][j];
 			}
 		

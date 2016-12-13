@@ -1,13 +1,12 @@
 #!/bin/bash
 
-WEIS=weisfeiler-lehman
 pad=$(printf '%0.1s' "."{1..40})
 good=0
 bad=0
 
 for f in tests/*.in; do
   # Calcul de l'algo 
-  res=$(./$WEIS < $f | head -c 3)
+  res=$(./weisfeiler-lehman $f | head -c 3)
 
   # Résultat attendu
   if [ $(echo $f | grep "\-perm.in") ]; then
