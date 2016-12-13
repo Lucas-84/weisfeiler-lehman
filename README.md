@@ -28,7 +28,7 @@ You may want to compile the programs used to generate the examples (random graph
 * Random graphs: `gcc -Wall -Wextra -std=c99 gen-random.c -o gen-random`
 * Random isomorphic graphs: `gcc -Wall -Wextra -std=c99 gen-random-perm.c -o gen-random-perm`
 
-Test the program on all the files in `tests/` with `make test`. Tests are expected to represented isomorphic graphs iff. they end with *-perm.in.
+Test the program on all the files in `tests/` with `make test`. Tests are expected to represented isomorphic graphs iff. they end with `*-perm.in`.
 
 ## Directory contents
 
@@ -40,5 +40,13 @@ Test the program on all the files in `tests/` with `make test`. Tests are expect
 * `notes` (some remainder to generate tests)
 * `weisfeiler-lehman.c` (main program source)
 * `test.sh` (script for testing)
+
+## Miscellaneous
+
+There is no `*_bound` function for the functions in the main part of the algorithm (`test_all_alone`, `test_one`, `weisfeiler_lehman_from`, `weisfeiler_lehman`, `backtrack_simple`, `backtrack_degree`, `find_stable_partition`), but rather a parameter `bound`. The goal is to achieve more precise time estimations.
+
+The algorithm is implemeted in the way it is described in the statements. In order to get a stable partitioning from an initial partitioning, we mainly sort the adjacency lists according to the parts to which the neighbours belong.
+
+## Reference 
 
 http://www.di.ens.fr/algoL3/Projets/isomorphisme.pdf
