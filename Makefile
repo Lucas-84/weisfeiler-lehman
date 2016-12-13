@@ -11,4 +11,3 @@ clean:
 	rm -f $(BIN)
 
 .PHONY: compile test
-
