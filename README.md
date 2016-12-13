@@ -1,6 +1,6 @@
 # Weisfeiler-Lehman heuristic for graph isomorphism
 
-weisfeiler-lehman is an implementation of the Weisfeiler-Lehman algorithm using C99.
+`weisfeiler-lehman` is an implementation of the Weisfeiler-Lehman algorithm using C99.
 
 ## Basic usage
 
