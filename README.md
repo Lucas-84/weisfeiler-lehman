@@ -1,14 +1,16 @@
 # Weisfeiler-Lehman heuristic for graph isomorphism
 
+## Basic usage
+
 Compile the program with `make`, the resulting binary is `weisfeiler-lehman`. Clean the repository with `make clean`.
 
-Usage: ./weisfeiler-lehman [w|b|d] file [-bound]
+Usage: `./weisfeiler-lehman [w|b|d] file [-bound]`
 
-* w: Weisfeiler-Lehman (default)
-* b: simple backtrack
-* d: backtrack with degree
-* file: input file in the specified format
-* -bound: print the computed upper bound
+* `w`: Weisfeiler-Lehman (default)
+* `b`: simple backtrack
+* `d`: backtrack with degree
+* `file`: input file in the specified format in http://www.di.ens.fr/algoL3/Projets/projet_base.html
+* `-bound`: print the computed upper bound
 
 Examples:
 	
@@ -19,11 +21,24 @@ Examples:
 ./weisfeiler-lehman a.in
 ```
 
+## Some basic tests
+
 You may want to compile the programs used to generate the examples (random graphs with Erdos-Renyi model):
 
 * Random graphs: `gcc -Wall -Wextra -std=c99 gen-random.c -o gen-random`
 * Random isomorphic graphs: `gcc -Wall -Wextra -std=c99 gen-random-perm.c -o gen-random-perm`
 
 Test the program on all the files in `tests/` with `make test`. Tests are expected to represented isomorphic graphs iff. they end with *-perm.in.
+
+## Directory contents
+
+* `Makefile`
+* `README.md`
+* `gen-random.c`
+* `gen-random-perm.c`
+* `checker.cpp` (checker for stable partitioning)
+* `notes` (some remainder to generate tests)
+* `weisfeiler-lehman.c` (main program source)
+* `test.sh` (script for testing)
 
 http://www.di.ens.fr/algoL3/Projets/isomorphisme.pdf
