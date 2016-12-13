@@ -582,10 +582,6 @@ int weisfeiler_lehman(const struct graph *g1, const struct graph *g2, int *a, ll
 /* In the first case, a will contain the isomorphism at the end of simple_backtrack(g1, g2, a, 0) */
 /* Algorithm: simple backtrack */
 int backtrack_simple(const struct graph *g1, const struct graph *g2, int *a, int u, ll *bound) {
-	*bound += 1;
-	if (g1->nb_nodes != g2->nb_nodes)
-		return 0;
-
 	int n = g1->nb_nodes;
 
 	*bound += 1;
@@ -618,11 +614,6 @@ int backtrack_simple(const struct graph *g1, const struct graph *g2, int *a, int
 /* Same as above */
 /* Algorithm: backtrack with degree partition */
 int backtrack_degree(const struct graph *g1, const struct graph *g2, int *a, int u, ll *bound) {
-	*bound += 1;
-
-	if (g1->nb_nodes != g2->nb_nodes)
-		return 0;
-
 	*bound += 1;
 	int n = g1->nb_nodes;
 
@@ -730,6 +721,13 @@ int main(int argc, char *argv[]) {
 
 	struct graph *g1 = read_graph(); 
 	struct graph *g2 = read_graph();
+
+	if (g1->nb_nodes != g2->nb_nodes) {
+		if (print_bound) puts("0");
+		puts("non");
+		return 0;
+	}
+
 	int *a = calloc_wrapper(g1->nb_nodes, sizeof *a);
 
 	ll bound = 0;
