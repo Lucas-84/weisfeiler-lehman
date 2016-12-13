@@ -1,5 +1,7 @@
 # Weisfeiler-Lehman heuristic for graph isomorphism
 
+weisfeiler-lehman is an implementation of the Weisfeiler-Lehman algorithm using C99.
+
 ## Basic usage
 
 Compile the program with `make`, the resulting binary is `weisfeiler-lehman`. Clean the repository with `make clean`.
@@ -45,7 +47,7 @@ Test the program on all the files in `tests/` with `make test`. Tests are expect
 
 There is no `*_bound` function for the functions in the main part of the algorithm (`test_all_alone`, `test_one`, `weisfeiler_lehman_from`, `weisfeiler_lehman`, `backtrack_simple`, `backtrack_degree`, `find_stable_partition`), but rather a parameter `bound`. The goal is to achieve more precise time estimations.
 
-The algorithm is implemeted in the way it is described in the statements. In order to get a stable partitioning from an initial partitioning, we mainly sort the adjacency lists according to the parts to which the neighbours belong.
+The algorithm is implemented in the way it is described in the problem statement. In order to get a stable partitioning from an initial partitioning, we mainly sort the adjacency lists according to the parts to which the neighbours of the node belong.
 
 ## Reference 
 
