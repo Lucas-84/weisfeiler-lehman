@@ -1,0 +1,106 @@
+\documentclass{beamer}
+
+\usepackage[frenchb]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+% \usepackage{latexsym}
+% \usepackage{listings}
+
+\usetheme{Warsaw}
+
+\mode<presentation>
+
+\title{Isomorphismes de graphes}
+\author{Lucas Pesenti \& Martin Pépin}
+\institute{Cours d'algorithmique}
+\date{11 janvier 2017}
+
+\AtBeginSection[] {
+    \begin{frame}
+        \frametitle{Sommaire}
+        \tableofcontents[currentsection, hideothersubsections]
+    \end{frame} 
+}
+
+\begin{document}
+
+  \begin{frame}
+    \titlepage
+  \end{frame}
+  
+  \begin{frame}
+    \frametitle{Sommaire}
+    \tableofcontents[hideallsubsections]
+  \end{frame}
+
+\section{Isomorphisme de graphe}
+  \subsection{Le problème}
+
+    \begin{frame}
+      \frametitle{Définition}
+      \begin{block}{Isomorphisme}
+        Deux graphes $G_1 = (V_1, E_1)$ et $G_2 = (V_2, E_2)$ sont isomorphes
+        s'il existe une bijection $\rho : V_1 \to V_2$ qui préserve les arêtes
+        \emph{e.g.} telle que $\rho(x)\rho(y) \in V_2$ si et seulement si
+        $xy \in V_1$.
+      \end{block}
+      \pause
+      Problème : on ne connait pas d'algorithme polynomial.
+    \end{frame}
+
+  \subsection{L'heuristique de Weisfeiler-Lehman}
+
+    \begin{frame}
+      \frametitle{Partition des sommets}
+      Améliorations
+      \begin{itemize}
+        \item<1-> Première idée : partitionner les sommets selon leur degré
+        \item<2-> Mieux : regarder les degrés des voisins
+        \item<3-> Etc… $\to$ Partition stable
+      \end{itemize}
+      % TODO DESSIN
+    \end{frame}
+
+    \begin{frame}
+      \frametitle{Weisfeiler-Lehman}
+      \begin{block}{Heuristique de Weisfeiler-Lehman}
+        Calculer la partition stable et appliquer l'algorithme glouton
+        dans les partitions correspondantes.
+      \end{block}
+    \end{frame}
+
+\section{Implémentation}
+
+    \begin{frame}
+      \frametitle{Structures des données}
+      \begin{itemize}
+        \item<1->
+          Graphes
+          \begin{itemize}
+            \item listes d'adjacences
+            \item On se souvient des degrés
+          \end{itemize}
+        \item<2->
+          Partitions
+          \begin{itemize}
+            \item<2-> Liste d'adjacence
+            \item<2-> Degrés
+            \item<3-> Liste des nœuds de chaque part
+            \item<3-> Map nœud $\to$ part
+            \item<3-> Tailles des parts
+            \item<3-> Nombre de part
+          \end{itemize}
+      \end{itemize}
+    \end{frame}
+
+    \begin{frame}
+      \frametitle{Partitionnement simple}
+    \end{frame}
+
+    \begin{frame}
+      \frametitle{Weisfeiler-Lehman}
+    \end{frame}
+
+\section{Résultats}
+
+\end{document}
