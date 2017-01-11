@@ -3,3 +3,13 @@ gen-random-perm
 gen-random
 checker
 tests/*
+random-perm/*
+random/*
+gen-complete
+gen-regular
+new-random/*
+new-regular/*
+new-complete/*
+new-random-perm/*
+regular/*
+complete/*
