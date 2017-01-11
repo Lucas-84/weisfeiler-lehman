@@ -63,6 +63,10 @@ void isolate(struct partition *p, int ipart, int i);
 ll isolate_bound(const struct partition *p, int ipart, int i);
 int smallest_part(const struct partition *p, const int *e);
 ll smallest_part_bound(const struct partition *p);
+void copy_partition(int n, struct partition *p, const struct partition *old);
+int copy_partition_bound(int n);
+void free_partition(int n, struct partition *p);
+ll free_partition_bound(int n);
 int test_all_alone(struct partition *p1, struct partition *p2, const struct graph *g1,
 		   const struct graph *g2, int *a, int *e, int k, ll *bound);
 int test_one(int imin, struct partition *p1, struct partition *p2, const struct graph *g1,
@@ -71,7 +75,6 @@ int weisfeiler_lehman_from(struct partition *p1, struct partition *p2, const str
  			   const struct graph *g2, int *a, int *e, int k, ll *bound);
 struct partition create_partition(const struct graph *g);
 ll create_partition_bound(int n);
-void free_partition(const struct graph *g, struct partition *p);
 ll free_partition_bound(int n);
 int weisfeiler_lehman(const struct graph *g1, const struct graph *g2, int *a, ll *bound);
 int backtrack_simple(const struct graph *g1, const struct graph *g2, int *a, int u, ll *bound);
@@ -287,7 +290,6 @@ void find_stable_partition(const struct graph *g, struct partition *p, ll *bound
 	int has_changed = 0;
 	*bound += n * sizeof *p->node_part;
 	memcpy(succ_node_part, p->node_part, n * sizeof *p->node_part);
-
  
 	do {
 		int prev_nb_parts = p->nb_parts;
@@ -405,6 +407,44 @@ ll smallest_part_bound(const struct partition *p) {
 	return 2 + 3 * p->nb_parts; 
 }
 
+void copy_partition(int n, struct partition *p, const struct partition *old) {
+	p->nb_parts = old->nb_parts;
+	for (int u = 0; u < n; ++u) {
+		p->degree[u] = old->degree[u];
+		p->part_size[u] = old->part_size[u];
+		p->node_part[u] = old->node_part[u];
+
+		for (int v = 0; v < n; ++v) {
+			p->parts[u][v] = old->parts[u][v];
+//			p->adjl[u][v] = old->adjl[u][v];
+		}
+	}
+}
+
+int copy_partition_bound(int n) {
+	return 1 + 3 * n + n * n;
+}
+
+/* Release a partition associated with g */
+void free_partition(int n, struct partition *p) {
+	for (int u = 0; u < n; ++u)
+		free(p->adjl[u]);
+
+	free(p->adjl);
+
+	for (int u = 0; u < n; ++u)
+		free(p->parts[u]);
+
+	free(p->parts);
+	free(p->node_part);
+	free(p->part_size);
+	free(p->degree);
+}
+
+ll free_partition_bound(int n) {
+	return 6 + 2 * n;
+}
+
 #if 0
 /* Debug function: print a partition */
 void print_partition(struct partition p) {
@@ -419,15 +459,22 @@ void print_partition(struct partition p) {
 
 #endif
 
+
+
 int test_all_alone(struct partition *p1, struct partition *p2, const struct graph *g1,
 		   const struct graph *g2, int *a, int *e, int k, ll *bound) {
-	struct partition n1 = *p1, n2 = *p2;
+	int n = g1->nb_nodes;
+	struct partition n1 = create_partition(g1); copy_partition(n, &n1, p1);
+	struct partition n2 = create_partition(g2); copy_partition(n, &n2, p2);
+	*bound += 2 * copy_partition_bound(n) + 2 * copy_partition_bound(n);
 
-	for (int i = 0; i < p1->nb_parts; ++i) {
+	for (int i = 0; i < p1->nb_parts; ++i)
 		if (p1->part_size[i] == 1) {
 			int u = p1->parts[i][0];
+
 			if (e[u])
 				continue;
+
 			a[u] = p2->parts[i][0];
 			e[u] = 1;
 			*bound += 5 + isolate_bound(&n1, i, 0) + isolate_bound(&n2, i, 0);
@@ -435,16 +482,22 @@ int test_all_alone(struct partition *p1, struct partition *p2, const struct grap
 			isolate(&n2, i, 0);
 			k++;
 		}
-	}
 	
 	*bound += is_isomorphism_partial_bound(g1->nb_nodes);
-	return is_isomorphism_partial(g1, g2, a, e) &&
-	       weisfeiler_lehman_from(&n1, &n2, g1, g2, a, e, k, bound);
+	int ans = is_isomorphism_partial(g1, g2, a, e) &&
+		weisfeiler_lehman_from(&n1, &n2, g1, g2, a, e, k, bound);
+	*bound += 2 * free_partition_bound(n);
+	free_partition(n, &n1); free_partition(n, &n2);
+	return ans;
 }
 
 int test_one(int imin, struct partition *p1, struct partition *p2, const struct graph *g1,
 	     const struct graph *g2, int *a, int *e, int k, ll *bound) {
 	int u = p1->parts[imin][0];
+	int n = g1->nb_nodes;
+	struct partition n1 = create_partition(g1);
+	struct partition n2 = create_partition(g2);
+	*bound += 2 * create_partition_bound(n);
 
 	for (int i = 0; i < p1->part_size[imin]; ++i) {
 		int v = p2->parts[imin][i];
@@ -452,15 +505,21 @@ int test_one(int imin, struct partition *p1, struct partition *p2, const struct 
 		*bound += 2;
 
 		if (is_isomorphism_partial(g1, g2, a, e)) {
-			struct partition n1 = *p1, n2 = *p2;
+			copy_partition(n, &n1, p1); copy_partition(n, &n2, p2);
+			*bound += 2 * copy_partition_bound(n);
+			isolate(&n1, imin, 0); isolate(&n2, imin, i);
 			*bound += isolate_bound(&n1, imin, 0) + isolate_bound(&n2, imin, i);
-			isolate(&n1, imin, 0);
-			isolate(&n2, imin, i);
-			if (weisfeiler_lehman_from(&n1, &n2, g1, g2, a, e, k + 1, bound))
+
+			if (weisfeiler_lehman_from(&n1, &n2, g1, g2, a, e, k + 1, bound)) {
+				*bound += 2 * free_partition_bound(n);
+				free_partition(n, &n1); free_partition(n, &n2);
 				return 1;
+			}
 		}
 	}
 
+	*bound += 2 * free_partition_bound(n);
+	free_partition(n, &n1); free_partition(n, &n2);
 	return 0;
 }
 
@@ -540,24 +599,6 @@ ll create_partition_bound(int n) {
 	return ans;
 }
 
-/* Release a partition associated with g */
-void free_partition(const struct graph *g, struct partition *p) {
-	int n = g->nb_nodes;
-	for (int u = 0; u < n; ++u)
-		free(p->adjl[u]);
-	free(p->adjl);
-	for (int u = 0; u < n; ++u)
-		free(p->parts[u]);
-	free(p->parts);
-	free(p->node_part);
-	free(p->part_size);
-	free(p->degree);
-}
-
-ll free_partition_bound(int n) {
-	return 6 + 2 * n;
-}
-
 /* General Weisfeiler-Lehman algorithm */
 int weisfeiler_lehman(const struct graph *g1, const struct graph *g2, int *a, ll *bound) {
 	int n = g1->nb_nodes;
@@ -570,11 +611,14 @@ int weisfeiler_lehman(const struct graph *g1, const struct graph *g2, int *a, ll
 	print_partition(p1);
 	print_partition(p2);
 #endif
+//	for (int i = 0; i < p1.nb_parts; ++i)
+//		fprintf(stderr, "%d ", p1.part_size[i]);
+//	fprintf(stderr, "\n");
 	int ans = weisfeiler_lehman_from(&p1, &p2, g1, g2, a, e, 0, bound);
 	*bound += 3;
 	free(e);
-	free_partition(g1, &p1);
-	free_partition(g2, &p2);
+	free_partition(n, &p1);
+	free_partition(n, &p2);
  	return ans;
 }
 
@@ -650,6 +694,7 @@ int backtrack_degree(const struct graph *g1, const struct graph *g2, int *a, int
 /* Read a graph in the specified input format */
 struct graph *read_graph(void) {
 	struct graph *g = malloc_wrapper(sizeof *g);
+
 	if (scanf("%d%d", &g->nb_nodes, &g->nb_edges) != 2) {
 		fprintf(stderr, "Wrong input\n");
 		exit(EXIT_FAILURE);
@@ -687,6 +732,7 @@ void free_graph(struct graph *g) {
 	for (int i = 0; i < g->nb_nodes; ++i)
 		free(g->adj[i]);
 
+	free(g->deg);
 	free(g->adj);
 	free(g);
 }
@@ -714,6 +760,7 @@ int main(int argc, char *argv[]) {
 		perror(argv[nextarg]);
 		exit(EXIT_FAILURE);
 	}
+
 	++nextarg;
 
 	if (argc > nextarg && strcmp(argv[nextarg], "-bound") == 0)
